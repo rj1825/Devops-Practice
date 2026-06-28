@@ -1,0 +1,100 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'myregistry.local:5000'
+        BACKEND_IMAGE   = 'kanban-backend'
+        FRONTEND_IMAGE  = 'kanban-frontend'
+        IMAGE_TAG       = "${BUILD_NUMBER}"
+        KUBECONFIG_CREDENTIAL_ID = 'kubeconfig-credentials'
+    }
+
+    stages {
+        stage('Initialize & Lint') {
+            steps {
+                echo 'Checking and linting codebase...'
+                dir('backend') {
+                    // Check if requirements install without errors
+                    sh 'pip install -r requirements.txt --user'
+                    sh 'python -m compileall .'
+                }
+                dir('frontend') {
+                    echo 'Linting static HTML/CSS/JS frontend files...'
+                    // Place validation commands here if ESLint or similar tools are configured
+                }
+            }
+        }
+
+        stage('Backend Unit Tests') {
+            steps {
+                echo 'Running unit tests for backend API service...'
+                dir('backend') {
+                    // Run pytest
+                    sh 'pytest'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo 'Building backend and frontend Docker images...'
+                
+                dir('backend') {
+                    sh "docker build -t ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG} ."
+                    sh "docker tag ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:latest"
+                }
+                
+                dir('frontend') {
+                    sh "docker build -t ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG} ."
+                    sh "docker tag ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                echo 'Scanning container images with Trivy (simulated)...'
+                // trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}
+                // trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                echo 'Pushing Docker images to local registry...'
+                sh "docker push ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
+                sh "docker push ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Applying Kubernetes manifests to the cluster...'
+                withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
+                    // Apply config maps, redis, backend and frontend resources
+                    sh 'kubectl apply -f k8s/configmap.yaml'
+                    sh 'kubectl apply -f k8s/redis-deployment.yaml'
+                    sh 'kubectl apply -f k8s/backend-deployment.yaml'
+                    sh 'kubectl apply -f k8s/frontend-deployment.yaml'
+                    
+                    // Force deployment rollouts to pull the new images
+                    sh "kubectl set image deployment/backend-deployment backend=${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
+                    sh "kubectl set image deployment/frontend-deployment frontend=${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
+                    
+                    // Verify deployment rollouts
+                    sh 'kubectl rollout status deployment/backend-deployment'
+                    sh 'kubectl rollout status deployment/frontend-deployment'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CI/CD Deployment successful for Build #${BUILD_NUMBER}!"
+        }
+        failure {
+            echo "CI/CD Pipeline failed. Please check build logs."
+        }
+    }
+}
