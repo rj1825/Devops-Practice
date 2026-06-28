@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SQL RAG Console</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-brain logo-icon"></i>
+                <h2>SQLAgent</h2>
+            </div>
+            
+            <div class="samples-section">
+                <h3>Suggested Prompts</h3>
+                <div class="sample-prompts">
+                    <button class="prompt-btn" onclick="usePrompt('How much is the total revenue?')">
+                        <i class="fa-solid fa-dollar-sign"></i> Total Revenue
+                    </button>
+                    <button class="prompt-btn" onclick="usePrompt('Who bought shoes?')">
+                        <i class="fa-solid fa-shoe-prints"></i> Shoe Buyers
+                    </button>
+                    <button class="prompt-btn" onclick="usePrompt('List all products')">
+                        <i class="fa-solid fa-tags"></i> List Products
+                    </button>
+                    <button class="prompt-btn" onclick="usePrompt('How many customers are there?')">
+                        <i class="fa-solid fa-users"></i> Customer Count
+                    </button>
+                    <button class="prompt-btn" onclick="usePrompt('Who is the highest spender?')">
+                        <i class="fa-solid fa-trophy"></i> Top Spender
+                    </button>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item" id="health-indicator">
+                    <span class="status-dot warning"></span>
+                    <span class="status-text">Connecting...</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>Project 3: AI SQL RAG</p>
+                <span class="badge">v1.0.0</span>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Split Screen -->
+        <div class="workspace">
+            <!-- Left Panel: Chat Interface -->
+            <section class="panel chat-panel">
+                <header class="panel-header">
+                    <h2>AI Chat Assistant</h2>
+                    <p>Ask business questions in plain English</p>
+                </header>
+                
+                <div class="chat-history" id="chat-history">
+                    <div class="chat-bubble assistant">
+                        Hello! I am your AI SQL assistant. Ask me anything about our customers, products, or orders, or click on a suggested prompt to see me in action!
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <form id="chat-form">
+                        <input type="text" id="user-input" autocomplete="off" placeholder="Ask a database question (e.g. 'Who is the highest spender?')..." required>
+                        <button type="submit" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Panel: SQL Inspector Console -->
+            <section class="panel console-panel">
+                <header class="panel-header">
+                    <h2>RAG Data Inspector</h2>
+                    <p>Inspect generated SQL queries and database responses</p>
+                </header>
+
+                <div class="console-content">
+                    <!-- SQL Display Section -->
+                    <div class="console-box">
+                        <div class="box-header">
+                            <span><i class="fa-solid fa-terminal text-accent-blue"></i> Generated SQL Query</span>
+                            <button class="copy-btn" id="btn-copy-sql" onclick="copySQL()"><i class="fa-regular fa-copy"></i> Copy</button>
+                        </div>
+                        <div class="code-editor">
+                            <pre><code id="sql-code">-- SQL code will be displayed here when you ask a question</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- DB Rows Table Section -->
+                    <div class="console-box table-box">
+                        <div class="box-header">
+                            <span><i class="fa-solid fa-table text-accent-green"></i> Database Query Results</span>
+                            <span class="badge" id="row-count-badge">0 rows</span>
+                        </div>
+                        <div class="table-container">
+                            <table id="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>Columns will appear here</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="empty-cell">Ask a question to fetch table data.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
