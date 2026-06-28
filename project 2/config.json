@@ -1,0 +1,19 @@
+{
+  "dry_run": true,
+  "regions": ["us-east-1", "us-west-2"],
+  "cleanup_settings": {
+    "unused_eip": true,
+    "orphaned_ebs": true,
+    "old_snapshots": true,
+    "idle_load_balancers": false
+  },
+  "rules": {
+    "ebs_orphan_days": 7,
+    "snapshot_max_age_days": 30,
+    "idle_alb_request_threshold": 100
+  },
+  "notifications": {
+    "sns_topic_arn": "arn:aws:sns:us-east-1:123456789012:CostOptimizationAlerts",
+    "s3_report_bucket": "cloud-cost-optimization-reports"
+  }
+}

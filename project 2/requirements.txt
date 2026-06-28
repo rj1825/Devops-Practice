@@ -1,0 +1,5 @@
+boto3>=1.28.0
+jinja2>=3.1.2
+pytest>=7.3.0
+moto[ec2,elbv2,sns]>=4.1.0
+pytest-mock>=3.10.0

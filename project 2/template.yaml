@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS Serverless Cost Optimizer. Sweeps AWS regions daily to find and clean up
+  unused/orphaned resources (volumes, IPs, snapshots, load balancers).
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Default: cloud-cost-optimization-reports
+    Description: S3 bucket name where HTML cost reports are stored.
+
+  SNSTopicName:
+    Type: String
+    Default: CostOptimizationAlerts
+    Description: SNS topic name for summary report notifications.
+
+Resources:
+  # S3 Bucket for reports
+  ReportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # SNS Topic for alerts
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref SNSTopicName
+
+  # Core Cost Optimizer Lambda Function
+  CostOptimizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.10
+      Timeout: 300
+      MemorySize: 256
+      Description: Sweeps AWS regions for unused resources and reports/cleans them.
+      Environment:
+        Variables:
+          DRY_RUN: "true"
+      Policies:
+        # Custom IAM policies to scan/clean resources and publish alerts
+        - Statement:
+            - Effect: Allow
+              Action:
+                # Permission to scan/release IPs, delete volumes, snapshots
+                - ec2:DescribeAddresses
+                - ec2:ReleaseAddress
+                - ec2:DescribeVolumes
+                - ec2:DeleteVolume
+                - ec2:DescribeSnapshots
+                - ec2:DeleteSnapshot
+                # Permission to scan/delete Load Balancers
+                - elasticloadbalancing:DescribeLoadBalancers
+                - elasticloadbalancing:DescribeTargetGroups
+                - elasticloadbalancing:DescribeTargetHealth
+                - elasticloadbalancing:DeleteLoadBalancer
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                # Permission to write S3 reports
+                - s3:PutObject
+              Resource: !Sub "arn:aws:s3:::${ReportBucket}/*"
+            - Effect: Allow
+              Action:
+                # Permission to send SNS summaries
+                - sns:Publish
+              Resource: !Ref AlertTopic
+
+      # Run the function once a day at 8:00 AM UTC
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 8 * * ? *)
+            Name: CostOptimizerDailyTrigger
+            Description: Triggers the Cost Optimizer daily.
+            Enabled: true
+
+Outputs:
+  CostOptimizerFunctionArn:
+    Description: "Cost Optimizer Lambda Function ARN"
+    Value: !GetAtt CostOptimizerFunction.Arn
+
+  ReportBucketName:
+    Description: "S3 Report Bucket Name"
+    Value: !Ref ReportBucket
+
+  AlertTopicArn:
+    Description: "SNS Alert Topic ARN"
+    Value: !Ref AlertTopic
