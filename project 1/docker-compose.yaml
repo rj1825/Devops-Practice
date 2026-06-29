@@ -14,7 +14,7 @@ services:
           cpus: '0.2'
           memory: 256M
 
-  backend:
+  backend-service:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -42,7 +42,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - backend
+      - backend-service
     networks:
       - kanban-network
     deploy:
