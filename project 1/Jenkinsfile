@@ -14,7 +14,7 @@ pipeline {
             steps {
                 echo 'Checking and linting codebase...'
                 dir('backend') {
-                    sh 'python3 -m pip install -r requirements.txt --user'
+                    sh 'python3 -m pip install -r requirements.txt --user --break-system-packages'
                     sh 'python3 -m compileall .'
                 }
                 dir('frontend') {
