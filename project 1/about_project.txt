@@ -1,0 +1,45 @@
+========================================================================
+PROJECT OVERVIEW: COLLABORATIVE KANBAN MICROSERVICES & CI/CD PIPELINE
+========================================================================
+
+-----------------------------------------
+1. WHAT THIS PROJECT IS ABOUT
+-----------------------------------------
+This project is a multi-container microservices application consisting of:
+- A Frontend dashboard user interface styled with glassmorphism CSS, running on Nginx.
+- A Backend REST API built with Python and FastAPI that handles CRUD task actions.
+- A database cache tier utilizing Redis to persist task states.
+- A local Jenkins automation pipeline (Jenkinsfile) executing code quality compile 
+  checks, backend unit tests (pytest), and packaging Docker container images.
+
+-----------------------------------------
+2. WHY THIS PROJECT IS IMPORTANT
+-----------------------------------------
+This project serves as a foundational benchmark for DevOps engineers, highlighting
+crucial real-world practices:
+
+A. MICROSERVICES PATTERNS:
+It demonstrates how to decouple an application into discrete, containerized services
+(web server, API, and database cache) that talk to each other over a virtual network,
+matching modern cloud native architectures.
+
+B. DATABASE CACHING & ROBUSTNESS:
+The backend is configured to search and write to a Redis DB container. If Redis is
+down or offline, the API automatically falls back to an in-memory storage buffer,
+showcasing database high-availability design.
+
+C. REVERSE PROXY CONFIGURATION:
+The Nginx server acts as a gateway proxy, routing API client requests directly to the
+backend container inside the Docker network. This solves CORS (Cross-Origin Resource
+Sharing) issues in a production-like environment.
+
+D. AUTOMATED TESTING IN CI/CD:
+The pipeline doesn't just build code; it integrates pytest unit checks. In a production
+flow, if a developer pushes a bug that breaks a task schema, the pipeline fails instantly,
+preventing faulty builds from reaching users.
+
+E. DOCKER-IN-DOCKER ORCHESTRATION:
+By mounting the host Docker socket (/var/run/docker.sock) inside the Jenkins container,
+this project shows how build servers compile Docker containers on behalf of the host,
+providing a local demonstration of pipeline compilation systems.
+========================================================================
