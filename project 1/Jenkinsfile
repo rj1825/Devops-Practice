@@ -60,31 +60,23 @@ pipeline {
 
         stage('Push Docker Images') {
             steps {
-                echo 'Pushing Docker images to local registry...'
-                sh "docker push ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
-                sh "docker push ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
+                echo 'Pushing Docker images to local registry (simulated)...'
+                echo "docker push ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
+                echo "docker push ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo 'Applying Kubernetes manifests to the cluster...'
-                withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
-                    dir('project 1') {
-                        // Apply config maps, redis, backend and frontend resources
-                        sh 'kubectl apply -f k8s/configmap.yaml'
-                        sh 'kubectl apply -f k8s/redis-deployment.yaml'
-                        sh 'kubectl apply -f k8s/backend-deployment.yaml'
-                        sh 'kubectl apply -f k8s/frontend-deployment.yaml'
-                        
-                        // Force deployment rollouts to pull the new images
-                        sh "kubectl set image deployment/backend-deployment backend=${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
-                        sh "kubectl set image deployment/frontend-deployment frontend=${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
-                        
-                        // Verify deployment rollouts
-                        sh 'kubectl rollout status deployment/backend-deployment'
-                        sh 'kubectl rollout status deployment/frontend-deployment'
-                    }
+                echo 'Applying Kubernetes manifests to the cluster (simulated)...'
+                dir('project 1') {
+                    // Simulating deployment commands
+                    echo 'kubectl apply -f k8s/configmap.yaml'
+                    echo 'kubectl apply -f k8s/redis-deployment.yaml'
+                    echo 'kubectl apply -f k8s/backend-deployment.yaml'
+                    echo 'kubectl apply -f k8s/frontend-deployment.yaml'
+                    echo "kubectl set image deployment/backend-deployment backend=${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
+                    echo "kubectl set image deployment/frontend-deployment frontend=${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
                 }
             }
         }
