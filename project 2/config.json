@@ -13,7 +13,7 @@
     "idle_alb_request_threshold": 100
   },
   "notifications": {
-    "sns_topic_arn": "arn:aws:sns:us-east-1:123456789012:CostOptimizationAlerts",
-    "s3_report_bucket": "cloud-cost-optimization-reports"
+    "sns_topic_arn": "",
+    "s3_report_bucket": "ros3"
   }
 }
