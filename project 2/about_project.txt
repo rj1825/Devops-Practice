@@ -1,0 +1,41 @@
+========================================================================
+PROJECT OVERVIEW: AWS COST OPTIMIZATION AUTOMATION
+========================================================================
+
+-----------------------------------------
+1. WHAT THIS PROJECT IS ABOUT
+-----------------------------------------
+This project is an automated serverless cost containment utility designed to run 
+inside AWS as a Lambda function. It:
+- Scans multiple AWS regions using the Boto3 SDK.
+- Detects underutilized and orphaned cloud resources (unassociated Elastic IPs, 
+  available EBS volumes, outdated snapshots, and idle ALB/NLBs).
+- Creates an HTML summary report and uploads it to an S3 bucket.
+- Publishes a summary alert to an SNS Topic (which triggers email or Slack alerts).
+- Safely cleans up the resources if dry-run mode is disabled in `config.json`.
+- Uses a YAML template for deployment via AWS SAM (Serverless Application Model).
+
+-----------------------------------------
+2. WHY THIS PROJECT IS IMPORTANT
+-----------------------------------------
+This project demonstrates key patterns in FinOps, Cloud Automation, and Serverless:
+
+A. CLOUD COST CONTAINMENT (FinOps):
+Orphaned cloud resources like unattached volumes and unassociated IPs accrue hourly
+charges silently. This optimizer automates the audit process to ensure zero waste.
+
+B. RISK MITIGATION (Dry-Run Pattern):
+Cleaning up active resources by script is highly risky. This project uses a strict
+`dry_run` safety toggle, letting teams audit and approve cost reports manually
+before committing to deletions.
+
+C. MOCK TESTING WITHOUT LIVE CREDENTIALS:
+Testing cloud scripts on live accounts is slow, costly, and dangerous. By using the
+`moto` library, this project mocks AWS services locally, allowing unit tests to
+fully execute offline.
+
+D. AUTOMATED INFRASTRUCTURE SCHEDULING:
+Through the EventBridge daily rule trigger defined in `template.yaml`, the system
+enforces continuous cost control daily, transforming cost optimization from a
+periodic manual chore into a continuous automated utility.
+========================================================================
