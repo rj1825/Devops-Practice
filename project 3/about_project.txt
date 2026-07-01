@@ -1,0 +1,41 @@
+========================================================================
+PROJECT OVERVIEW: AI SQL RAG CHATBOT SYSTEM
+========================================================================
+
+-----------------------------------------
+1. WHAT THIS PROJECT IS ABOUT
+-----------------------------------------
+This project is an intelligent Text-to-SQL analytics system consisting of:
+- A relational database schema (sqlite/PostgreSQL) containing seeded business tables 
+  (customers, products, orders).
+- A Python FastAPI server implementing a schema-aware LangChain LLM agent.
+- A split-screen frontend console displaying a chat box alongside a data inspector 
+  showing raw generated SQL commands and database rows.
+- A fallback query mapping directory ensuring full execution functionality during 
+  offline/no-API-key testing.
+
+-----------------------------------------
+2. WHY THIS PROJECT IS IMPORTANT
+-----------------------------------------
+This project demonstrates key patterns in AI Engineering, Data Analytics, and RAG:
+
+A. NATURAL LANGUAGE INTERFACES FOR DATA:
+It bridges the technical gap for non-developers, allowing business stakeholders
+to extract complex data insights from SQL databases by asking plain English
+questions.
+
+B. DYNAMIC SQL GENERATION (Text-to-SQL):
+Using LangChain and Google Gemini, the agent dynamically inspects the database's
+tables, fields, and relationships, writing valid SQLite/PostgreSQL statements on
+the fly and explaining the returned data.
+
+C. HYBRID OFFLINE RESILIENCE:
+API key expirations or network disconnections can crash LLM applications. By
+integrating a rule-based mock query directory, this system guarantees that core
+business questions still return valid SQL and results during offline testing.
+
+D. DEVELOPER-CENTRIC EXPLANATION PANEL:
+Traditional AI chats hide the mechanics. This console exposes the raw generated
+SQL query and the actual database output rows, allowing database administrators
+and developers to verify the LLM's logical accuracy.
+========================================================================
