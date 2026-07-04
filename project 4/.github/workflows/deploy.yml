@@ -1,0 +1,112 @@
+name: Deploy Static Asset CDN Platform
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - 'src/**'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+
+permissions:
+  id-token: write # Required for AWS OIDC federation (security best practice)
+  contents: read
+
+jobs:
+  terraform-ci:
+    name: Terraform Check & Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        run: terraform init -backend=false # Runs validation checks without checking remote state
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  deploy:
+    name: Terraform Apply & Asset Sync
+    needs: [terraform-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Security Best Practice: Use OIDC role instead of long-lived access keys
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-cdn-deploy-role # Replace with your real IAM OIDC Role ARN
+          aws-region: us-east-1
+          # If using Access Keys instead of OIDC, configure credentials in secrets:
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        id: tf-apply
+        run: |
+          terraform apply -auto-approve -input=false
+          # Extract outputs to environment variables for subsequent steps
+          echo "S3_BUCKET=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "CF_DIST_ID=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: Sync Static Assets to S3
+        run: |
+          # Sync files from local src/ directory to the provisioned S3 Bucket
+          # Cache settings: Set Cache-Control header based on file type
+          
+          # 1. Sync all assets with default short cache
+          aws s3 sync ../src/ s3://${{ steps.tf-apply.outputs.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "max-age=3600, public"
+
+          # 2. Add aggressive caching headers to long-lived assets (images, css, js)
+          aws s3 cp ../src/css/ s3://${{ steps.tf-apply.outputs.S3_BUCKET }}/css/ \
+            --recursive \
+            --metadata-directive REPLACE \
+            --cache-control "max-age=31536000, public, immutable"
+
+          aws s3 cp ../src/js/ s3://${{ steps.tf-apply.outputs.S3_BUCKET }}/js/ \
+            --recursive \
+            --metadata-directive REPLACE \
+            --cache-control "max-age=31536000, public, immutable"
+
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          # Invalidate CDN cache globally to force-refresh newly deployed assets
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.tf-apply.outputs.CF_DIST_ID }} \
+            --paths "/*"

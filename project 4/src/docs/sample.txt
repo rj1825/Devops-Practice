@@ -1,0 +1,10 @@
+Enterprise Static Asset Delivery Platform Documentation
+=======================================================
+
+This is a sample document delivered securely through the global CloudFront Content Delivery Network.
+Security:
+- Origin is restricted to S3 bucket reads only via CloudFront Origin Access Control (OAC).
+- Direct access to the S3 bucket is blocked by S3 Block Public Access configurations.
+- All requests are audited and filtered by AWS WAF Web ACL rules.
+- HTTP traffic is forced to HTTPS.
+- Custom security response headers are applied (HSTS, CSP, X-Frame-Options, X-Content-Type-Options).
