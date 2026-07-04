@@ -5,14 +5,14 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/**'
-      - 'src/**'
+      - 'project 4/terraform/**'
+      - 'project 4/src/**'
       - '.github/workflows/deploy.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'terraform/**'
+      - 'project 4/terraform/**'
 
 permissions:
   id-token: write # Required for AWS OIDC federation (security best practice)
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./terraform
+        working-directory: './project 4/terraform'
 
     steps:
       - name: Checkout Code
@@ -51,21 +51,19 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./terraform
+        working-directory: './project 4/terraform'
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Security Best Practice: Use OIDC role instead of long-lived access keys
+      # Configure AWS Credentials using Access Keys (stored as Secrets)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::123456789012:role/github-actions-cdn-deploy-role # Replace with your real IAM OIDC Role ARN
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          # If using Access Keys instead of OIDC, configure credentials in secrets:
-          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
