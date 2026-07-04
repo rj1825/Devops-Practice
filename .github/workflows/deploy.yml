@@ -4,15 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'project 4/terraform/**'
-      - 'project 4/src/**'
-      - '.github/workflows/deploy.yml'
   pull_request:
     branches:
       - main
-    paths:
-      - 'project 4/terraform/**'
 
 permissions:
   id-token: write # Required for AWS OIDC federation (security best practice)
