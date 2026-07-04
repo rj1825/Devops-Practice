@@ -2,7 +2,7 @@
 resource "aws_wafv2_web_acl" "waf" {
   count = var.enable_waf ? 1 : 0
 
-  name        = "${var.project_name}-${var.environment}-waf"
+  name        = "${var.project_name}-${var.environment}-waf-${random_string.suffix.result}"
   description = "WAF Web ACL protecting CloudFront static assets CDN"
   scope       = "CLOUDFRONT"
 
@@ -81,7 +81,7 @@ resource "aws_wafv2_web_acl" "waf" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "${var.project_name}-${var.environment}-waf-acl"
+    metric_name                = "${var.project_name}-${var.environment}-waf-acl-${random_string.suffix.result}"
     sampled_requests_enabled   = true
   }
 }

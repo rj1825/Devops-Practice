@@ -1,6 +1,6 @@
 # Security Response Headers Policy
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
-  name    = "${var.project_name}-${var.environment}-security-headers"
+  name    = "${var.project_name}-${var.environment}-security-headers-${random_string.suffix.result}"
   comment = "Enforces strict security headers on all CDN responses"
 
   security_headers_config {
