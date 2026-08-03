@@ -11,3 +11,8 @@
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Terraform ignores
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.backup
