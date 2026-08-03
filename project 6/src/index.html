@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure GitOps Live Dashboard - Project 6</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary-color: #0078d4;
+            --accent-green: #107c41;
+            --accent-purple: #8764b8;
+            --text-color: #f3f2f1;
+            --text-muted: #a19f9d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 90%;
+            margin: 40px auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #50b3ff, #0078d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            background-color: var(--accent-green);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            box-shadow: 0 0 15px rgba(16, 124, 65, 0.3);
+        }
+
+        .badge::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #00ff66;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 120, 212, 0.4);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #50b3ff;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card ul {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+        }
+
+        .card li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            color: var(--text-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card li:last-child {
+            border-bottom: none;
+        }
+
+        .card li span.label {
+            color: var(--text-muted);
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .highlight-text {
+            color: #8764b8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Azure GitOps Live Cluster</h1>
+            <p class="subtitle">Continuous Delivery powered by GitHub Actions, Terraform & ArgoCD</p>
+            <div class="badge">Live & Synced</div>
+        </header>
+
+        <div class="grid">
+            <!-- IaC Card -->
+            <div class="card">
+                <h3><span class="card-icon">🏗️</span> Infrastructure</h3>
+                <ul>
+                    <li><span class="label">Provider</span> <span>Microsoft Azure</span></li>
+                    <li><span class="label">IaC Engine</span> <span>Terraform v1.7.0</span></li>
+                    <li><span class="label">VNet Subnets</span> <span>Public / Private</span></li>
+                    <li><span class="label">Security Rule</span> <span>Zero-Trust Inbound</span></li>
+                </ul>
+            </div>
+
+            <!-- Cluster Card -->
+            <div class="card">
+                <h3><span class="card-icon">☸️</span> Kubernetes Cluster</h3>
+                <ul>
+                    <li><span class="label">Distribution</span> <span>k3s (Lightweight K8s)</span></li>
+                    <li><span class="label">Control Plane</span> <span>1 Master (VM)</span></li>
+                    <li><span class="label">Workers</span> <span>2 Nodes (Isolated)</span></li>
+                    <li><span class="label">Cluster Tunnel</span> <span>Agent Proxy Tunnel</span></li>
+                </ul>
+            </div>
+
+            <!-- GitOps Card -->
+            <div class="card">
+                <h3><span class="card-icon">🚀</span> GitOps Pipeline</h3>
+                <ul>
+                    <li><span class="label">CI Tool</span> <span>GitHub Actions</span></li>
+                    <li><span class="label">CD Tool</span> <span>ArgoCD (Self-Heal)</span></li>
+                    <li><span class="label">Registry</span> <span>Azure Container Registry</span></li>
+                    <li><span class="label">Sync State</span> <span class="highlight-text">Declarative</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            Project 6 • Developed natively on Azure VMs • Automated from zero to GitOps.
+        </div>
+    </div>
+</body>
+</html>

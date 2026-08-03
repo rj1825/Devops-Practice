@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # Points to the source repository and directory containing app manifests
+    repoURL: 'https://github.com/rj1825/Devops-Practice.git'
+    targetRevision: HEAD
+    path: 'project 6/kubernetes/app'
+  destination:
+    # Deploy to the local k3s cluster in the default namespace
+    server: 'https://kubernetes.default.svc'
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

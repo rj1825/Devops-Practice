@@ -1,0 +1,111 @@
+name: Project 6 - AWS GitOps Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'project 6/**'
+      - '!project 6/kubernetes/app/deployment.yaml' # Prevent loop when pipeline updates Kubernetes manifest
+      - '.github/workflows/project6-deploy.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'project 6/**'
+      - '.github/workflows/project6-deploy.yml'
+
+permissions:
+  contents: write # Required for committing deployment updates back to repo
+
+jobs:
+  terraform-ci:
+    name: Terraform Check & Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './project 6/terraform'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  deploy-infra-and-build-image:
+    name: Deploy AWS Infra & Build App Image
+    needs: [terraform-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './project 6'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Needed to push back commit
+
+      # Configure AWS Credentials from Repository Secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      # Deploy AWS VPC, EC2 instances & ECR
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve -input=false
+          
+          # Output variables for next steps
+          ECR_REGISTRY_URL=$(terraform output -raw ecr_registry_url)
+          ECR_NAME=$(terraform output -raw ecr_name)
+          echo "ECR_REGISTRY_URL=$ECR_REGISTRY_URL" >> $GITHUB_ENV
+          echo "ECR_NAME=$ECR_NAME" >> $GITHUB_ENV
+
+      # Login to the provisioned Amazon ECR
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build and push the application image to ECR
+      - name: Build & Push Docker Image
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t ${{ env.ECR_REGISTRY_URL }}:latest -t ${{ env.ECR_REGISTRY_URL }}:$IMAGE_TAG ./src
+          docker push ${{ env.ECR_REGISTRY_URL }}:latest
+          docker push ${{ env.ECR_REGISTRY_URL }}:$IMAGE_TAG
+
+      # Update the image tag in deployment.yaml to trigger ArgoCD sync
+      - name: Promote Image in Git (GitOps Sync)
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          sed -i "s|image: nginx:alpine|image: ${{ env.ECR_REGISTRY_URL }}:$IMAGE_TAG|g" ./kubernetes/app/deployment.yaml
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add ./kubernetes/app/deployment.yaml
+          git commit -m "chore(gitops): promote image to tag $IMAGE_TAG [skip ci]"
+          git push
