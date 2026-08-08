@@ -1,25 +1,23 @@
 # Global configurations
 global:
   app: kanban-app
-
 # Frontend configurations
 frontend:
   replicaCount: 2
   image:
     repository: 927656030461.dkr.ecr.us-east-1.amazonaws.com/kanban-frontend
-    tag: latest
+    tag: c64dd9e4e3272a252c1cb451be8287c8b0a81e75
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer # Changed to LoadBalancer for AWS integration
     port: 80
     targetPort: 80
-
 # Backend configurations
 backend:
   replicaCount: 2
   image:
     repository: 927656030461.dkr.ecr.us-east-1.amazonaws.com/kanban-backend
-    tag: latest
+    tag: c64dd9e4e3272a252c1cb451be8287c8b0a81e75
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -32,7 +30,6 @@ backend:
     requests:
       cpu: 250m
       memory: 256Mi
-
 # Redis configurations
 redis:
   image:
@@ -41,12 +38,10 @@ redis:
     pullPolicy: IfNotPresent
   service:
     port: 6379
-
 # Application Configurations (ConfigMap values)
 config:
   redisHost: "redis-service"
   redisPort: "6379"
   debugMode: "True"
   fallbackToMemory: "True"
-
 # Trigger CI workflow to verify permissions fix
