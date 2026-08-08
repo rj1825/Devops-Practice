@@ -48,3 +48,5 @@ config:
   redisPort: "6379"
   debugMode: "True"
   fallbackToMemory: "True"
+
+# Trigger CI workflow to verify permissions fix
