@@ -1,0 +1,106 @@
+name: Kanban GitOps CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Projact 8/frontend/**'
+      - 'Projact 8/backend/**'
+      - 'Projact 8/helm/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'Projact 8/frontend/**'
+      - 'Projact 8/backend/**'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_BACKEND: kanban-backend
+  ECR_REPOSITORY_FRONTEND: kanban-frontend
+
+jobs:
+  test:
+    name: Run Backend Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          cd "Projact 8/backend"
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run Tests
+        run: |
+          cd "Projact 8/backend"
+          pytest
+
+  build-and-push:
+    name: Build & Push to Amazon ECR
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Backend Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd "Projact 8/backend"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest
+
+      - name: Build, Tag, and Push Frontend Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd "Projact 8/frontend"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:latest
+
+      - name: Update GitOps Helm Manifests
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Set up Git Config
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Install yq to manipulate YAML files
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+          # Update the tags in values.yaml
+          yq -i ".backend.image.tag = \"${IMAGE_TAG}\"" "Projact 8/helm/kanban-app/values.yaml"
+          yq -i ".frontend.image.tag = \"${IMAGE_TAG}\"" "Projact 8/helm/kanban-app/values.yaml"
+          
+          # Commit the changes back to the repository
+          git add "Projact 8/helm/kanban-app/values.yaml"
+          git commit -m "[skip ci] GitOps: update image tags to ${IMAGE_TAG}"
+          git push

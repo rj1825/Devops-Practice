@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kanban-gitops-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/rj1825/Devops-Practice.git' # Repo URL
+    targetRevision: HEAD                                      # Watches HEAD of primary branch
+    path: Projact 8/helm/kanban-app                           # Path to the Helm chart
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'                  # Local EKS cluster
+    namespace: kanban
+  syncPolicy:
+    automated:
+      prune: true                                             # Auto-delete resources no longer in git
+      selfHeal: true                                          # Overwrite manual cluster changes (prevent drift)
+    syncOptions:
+      - CreateNamespace=true                                  # Automatically create the 'kanban' namespace if missing

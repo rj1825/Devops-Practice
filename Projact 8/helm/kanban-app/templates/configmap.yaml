@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  labels:
+    app: {{ .Values.global.app }}
+data:
+  REDIS_HOST: {{ .Values.config.redisHost | quote }}
+  REDIS_PORT: {{ .Values.config.redisPort | quote }}
+  DEBUG: {{ .Values.config.debugMode | quote }}
+  FALLBACK_TO_MEMORY: {{ .Values.config.fallbackToMemory | quote }}

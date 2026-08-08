@@ -1,0 +1,50 @@
+# Global configurations
+global:
+  app: kanban-app
+
+# Frontend configurations
+frontend:
+  replicaCount: 2
+  image:
+    repository: kanban-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: LoadBalancer # Changed to LoadBalancer for AWS integration
+    port: 80
+    targetPort: 80
+
+# Backend configurations
+backend:
+  replicaCount: 2
+  image:
+    repository: kanban-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Redis configurations
+redis:
+  image:
+    repository: redis
+    tag: 7.0-alpine
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+
+# Application Configurations (ConfigMap values)
+config:
+  redisHost: "redis-service"
+  redisPort: "6379"
+  debugMode: "True"
+  fallbackToMemory: "True"
