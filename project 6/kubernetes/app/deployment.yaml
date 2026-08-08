@@ -18,7 +18,7 @@ spec:
       containers:
       - name: web-container
         # Pulls nginx by default; in CI/CD this gets updated with the Amazon ECR repository image
-        image: nginx:alpine
+        image: 927656030461.dkr.ecr.us-east-1.amazonaws.com/project6-sample-web-app:2dbbf0c3988f326e4d45db56f261187b940c8ad6
         ports:
         - containerPort: 80
         resources:
