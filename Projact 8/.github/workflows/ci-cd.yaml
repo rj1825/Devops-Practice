@@ -15,6 +15,9 @@ on:
       - 'Projact 8/frontend/**'
       - 'Projact 8/backend/**'
 
+permissions:
+  contents: write
+
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY_BACKEND: kanban-backend
