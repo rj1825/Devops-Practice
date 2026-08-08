@@ -6,7 +6,7 @@ global:
 frontend:
   replicaCount: 2
   image:
-    repository: kanban-frontend
+    repository: 927656030461.dkr.ecr.us-east-1.amazonaws.com/kanban-frontend
     tag: latest
     pullPolicy: IfNotPresent
   service:
@@ -18,7 +18,7 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: kanban-backend
+    repository: 927656030461.dkr.ecr.us-east-1.amazonaws.com/kanban-backend
     tag: latest
     pullPolicy: IfNotPresent
   service:
