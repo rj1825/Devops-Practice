@@ -1,0 +1,18 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: backend-network-delay
+  namespace: chaos-testing
+spec:
+  action: delay
+  mode: all # Target all pods matching the selector
+  selector:
+    namespaces:
+      - chaos-testing
+    labelSelectors:
+      app: 'backend-app'
+  delay:
+    latency: '150ms'
+    jitter: '10ms'
+  direction: to # Inject latency on traffic flowing into the backend
+  duration: '10m' # Duration of the active network degradation window
