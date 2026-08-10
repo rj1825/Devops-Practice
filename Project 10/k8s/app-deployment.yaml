@@ -58,7 +58,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: rj1825/kanban-backend:latest
+        image: kanban-backend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
@@ -105,7 +105,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: rj1825/kanban-frontend:latest
+        image: kanban-frontend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
