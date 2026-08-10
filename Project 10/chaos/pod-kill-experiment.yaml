@@ -1,16 +1,18 @@
 apiVersion: chaos-mesh.org/v1alpha1
-kind: PodChaos
+kind: Schedule
 metadata:
   name: pod-kill-backend
   namespace: chaos-testing
 spec:
-  action: pod-kill
-  mode: one # Kill exactly one pod matching the selector
-  duration: '10m' # Duration of the active chaos window
-  scheduler:
-    cron: '*/30 * * * * *' # Trigger every 30 seconds
-  selector:
-    namespaces:
-      - chaos-testing
-    labelSelectors:
-      app: 'backend-app'
+  schedule: '@every 30s' # Triggers the pod-kill experiment every 30 seconds
+  historyLimit: 2
+  concurrencyPolicy: 'Forbid'
+  type: 'PodChaos'
+  podChaos:
+    action: pod-kill
+    mode: one # Kill exactly one pod
+    selector:
+      namespaces:
+        - chaos-testing
+      labelSelectors:
+        app: 'backend-app'
