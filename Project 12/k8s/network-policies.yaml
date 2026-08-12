@@ -1,0 +1,110 @@
+# 1. Default Deny All Traffic Ingress and Egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: secure-zone
+spec:
+  podSelector: {} # Target all pods in this namespace
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# 2. Allow Outgoing DNS Resolution (Crucial for service discovery)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-resolution
+  namespace: secure-zone
+spec:
+  podSelector: {} # Target all pods
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector: {} # Allow traffic to kube-system namespace
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+# 3. Allow Public Ingress to Frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-ingress
+  namespace: secure-zone
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0 # Allow traffic from anywhere
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: backend-app # Allow frontend to communicate with backend
+    ports:
+    - protocol: TCP
+      port: 8000
+---
+# 4. Allow Frontend-to-Backend Traffic Only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-traffic
+  namespace: secure-zone
+spec:
+  podSelector:
+    matchLabels:
+      app: backend-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend-app # Restrict ingress source to frontend pods only
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis-db # Allow backend to communicate with Redis
+    ports:
+    - protocol: TCP
+      port: 6379
+---
+# 5. Allow Backend-to-Redis Traffic Only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-traffic
+  namespace: secure-zone
+spec:
+  podSelector:
+    matchLabels:
+      app: redis-db
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: backend-app # Restrict ingress source to backend pods only
+    ports:
+    - protocol: TCP
+      port: 6379

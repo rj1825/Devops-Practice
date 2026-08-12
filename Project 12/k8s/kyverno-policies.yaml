@@ -1,0 +1,47 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-root-execution
+spec:
+  validationFailureAction: Enforce # Enforce policy blocks violating deployments
+  background: true
+  rules:
+  - name: check-run-as-non-root
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - secure-zone
+    validate:
+      message: "SECURITY ERROR: Containers in the 'secure-zone' must run as non-root. Please set securityContext.runAsNonRoot = true."
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              runAsNonRoot: true
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-privilege-escalation
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: check-allow-privilege-escalation
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - secure-zone
+    validate:
+      message: "SECURITY ERROR: Privilege escalation is prohibited in 'secure-zone'. Please set securityContext.allowPrivilegeEscalation = false."
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              allowPrivilegeEscalation: false
