@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Engineering Portal - IDP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glow-container">
+    <div class="glow-circle cyan"></div>
+    <div class="glow-circle purple"></div>
+  </div>
+
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <span class="icon">⚙️</span>
+        <h1>Developer Self-Service Portal</h1>
+      </div>
+      <p class="subtitle">Platform Engineering & Policy-as-Code Sandbox</p>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Provisioning Forms -->
+      <section class="card glass provisioning-section">
+        <h2>Provision New Infrastructure</h2>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('s3')">🪣 S3 Bucket</button>
+          <button class="tab-btn" onclick="switchTab('ec2')">🖥️ EC2 Instance</button>
+        </div>
+
+        <!-- S3 Form -->
+        <form id="s3-form" class="form-content active">
+          <div class="form-group">
+            <label for="s3-name">Service Reference Name</label>
+            <input type="text" id="s3-name" placeholder="e.g. user-uploads-s3" required>
+          </div>
+          <div class="form-group">
+            <label for="s3-bucket-name">Bucket Name (Must be globally unique)</label>
+            <input type="text" id="s3-bucket-name" placeholder="e.g. dev-user-uploads-bucket-123" required>
+          </div>
+          <div class="form-group">
+            <label for="s3-env">Environment</label>
+            <select id="s3-env">
+              <option value="dev">Development</option>
+              <option value="staging">Staging</option>
+              <option value="prod">Production</option>
+            </select>
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="s3-encrypt" checked>
+            <label for="s3-encrypt">Enable Server-Side Encryption (AES256)</label>
+          </div>
+          <button type="submit" class="submit-btn">Provision S3 Bucket</button>
+        </form>
+
+        <!-- EC2 Form -->
+        <form id="ec2-form" class="form-content">
+          <div class="form-group">
+            <label for="ec2-name">Service Reference Name</label>
+            <input type="text" id="ec2-name" placeholder="e.g. auth-api-vm" required>
+          </div>
+          <div class="form-group">
+            <label for="ec2-instance-name">Instance Name Tag</label>
+            <input type="text" id="ec2-instance-name" placeholder="e.g. auth-api-production" required>
+          </div>
+          <div class="form-group">
+            <label for="ec2-type">Instance Size (Guardrails Enforced)</label>
+            <select id="ec2-type">
+              <option value="t3.micro">t3.micro (Free-Tier Compliant)</option>
+              <option value="t3.small">t3.small (Free-Tier Compliant)</option>
+              <option value="m5.large" class="violation-opt">m5.large (🚨 Policy Violating - High Cost)</option>
+              <option value="c5.xlarge" class="violation-opt">c5.xlarge (🚨 Policy Violating - High Cost)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ec2-env">Environment</label>
+            <select id="ec2-env">
+              <option value="dev">Development</option>
+              <option value="staging">Staging</option>
+              <option value="prod">Production</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-btn">Provision EC2 VM</button>
+        </form>
+      </section>
+
+      <!-- Right Column: Live Logs Terminal -->
+      <section class="card glass logs-section">
+        <h2>Terraform Execution Console</h2>
+        <div class="terminal" id="terminal">
+          <div class="terminal-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="title">bash - terraform output</span>
+          </div>
+          <div class="terminal-body" id="console-output">
+            <p class="sys-msg">> System ready. Configure service parameters and trigger provisioning.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Active Services Catalog -->
+    <section class="card glass catalog-section">
+      <h2>Active Services Catalog</h2>
+      <div class="table-container">
+        <table id="services-table">
+          <thead>
+            <tr>
+              <th>Service Name</th>
+              <th>Type</th>
+              <th>Environment</th>
+              <th>Details</th>
+              <th>Status</th>
+              <th>Created At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="services-list">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let activeTab = 's3';
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.form-content').forEach(form => form.classList.remove('active'));
+
+      if (tab === 's3') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('s3-form').classList.add('active');
+      } else {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('ec2-form').classList.add('active');
+      }
+    }
+
+    // Load active services catalog
+    async function loadCatalog() {
+      const res = await fetch('/api/services');
+      const services = await res.json();
+      const tbody = document.getElementById('services-list');
+      tbody.innerHTML = '';
+
+      if (services.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No active resources provisioned.</td></tr>`;
+        return;
+      }
+
+      services.forEach(service => {
+        const details = service.type === 's3' 
+          ? `Bucket: <code>${service.params.bucket_name}</code> (SSE: ${service.params.encrypted})`
+          : `VM Name: <code>${service.params.instance_name}</code> | Size: <code>${service.params.instance_type}</code>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${service.name}</strong></td>
+          <td><span class="badge type-${service.type}">${service.type.toUpperCase()}</span></td>
+          <td><span class="badge env-${service.params.environment}">${service.params.environment.toUpperCase()}</span></td>
+          <td>${details}</td>
+          <td><span class="badge status-active">Active</span></td>
+          <td>${new Date(service.created_at).toLocaleString()}</td>
+          <td><button class="delete-btn" onclick="deleteService('${service.id}')">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Delete service record
+    async function deleteService(id) {
+      if (!confirm("Are you sure you want to delete this resource record?")) return;
+      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        loadCatalog();
+      }
+    }
+
+    // Handle Forms Submit & SSE Connection
+    async function provisionResource(event) {
+      event.preventDefault();
+      const consoleOutput = document.getElementById('console-output');
+      consoleOutput.innerHTML = ''; // Clear logs
+
+      let body = {};
+      if (activeTab === 's3') {
+        body = {
+          serviceType: 's3',
+          name: document.getElementById('s3-name').value,
+          params: {
+            bucket_name: document.getElementById('s3-bucket-name').value,
+            environment: document.getElementById('s3-env').value,
+            encrypted: document.getElementById('s3-encrypt').checked
+          }
+        };
+      } else {
+        body = {
+          serviceType: 'ec2',
+          name: document.getElementById('ec2-name').value,
+          params: {
+            instance_name: document.getElementById('ec2-instance-name').value,
+            instance_type: document.getElementById('ec2-type').value,
+            environment: document.getElementById('ec2-env').value
+          }
+        };
+      }
+
+      // 1. Post request to backend to initiate build
+      const response = await fetch('/api/provision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      // 2. Handle Policy Violations (direct JSON rejection response)
+      if (!response.ok) {
+        const err = await response.json();
+        const p = document.createElement('p');
+        p.className = 'log-err';
+        p.innerText = err.error || 'Provisioning failed.';
+        consoleOutput.appendChild(p);
+        return;
+      }
+
+      // 3. Connect to streaming SSE logs
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              const p = document.createElement('p');
+              
+              if (data.log.includes('[stderr]') || data.log.includes('POLICY VIOLATION') || data.log.includes('failed')) {
+                p.className = 'log-err';
+              } else if (data.log.includes('[SYSTEM]') || data.log.includes('success')) {
+                p.className = 'log-success';
+              } else {
+                p.className = 'log-line';
+              }
+
+              p.innerText = data.log;
+              consoleOutput.appendChild(p);
+
+              // Auto-scroll terminal
+              const terminal = document.getElementById('terminal');
+              terminal.scrollTop = terminal.scrollHeight;
+            } catch (e) {
+              // Ignore partial parsing errors
+            }
+          }
+        });
+      }
+
+      // Refresh catalog list once provisioning closes
+      loadCatalog();
+    }
+
+    document.getElementById('s3-form').addEventListener('submit', provisionResource);
+    document.getElementById('ec2-form').addEventListener('submit', provisionResource);
+
+    // Initial load
+    loadCatalog();
+  </script>
+</body>
+</html>

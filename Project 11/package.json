@@ -1,0 +1,13 @@
+{
+  "name": "internal-developer-platform",
+  "version": "1.0.0",
+  "description": "A self-service internal developer platform (IDP) with built-in guardrails and real-time log streaming.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
