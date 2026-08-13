@@ -43,10 +43,7 @@ spec:
   - Ingress
   - Egress
   ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0 # Allow traffic from anywhere
-    ports:
+  - ports:
     - protocol: TCP
       port: 8080
   egress:
